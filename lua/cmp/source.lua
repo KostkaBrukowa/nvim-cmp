@@ -371,10 +371,18 @@ end
 ---Resolve CompletionItem
 ---@param item lsp.CompletionItem
 ---@param callback fun(item: lsp.CompletionItem)
-source.resolve = function(self, item, callback)
+source.resolve = function(self, item, callback, bulk_id, bulk_callback)
   if not self.source.resolve then
     return callback(item)
   end
+
+  if bulk_id and self.source.bulk_resolve then
+    self.source:bulk_resolve(item, function(resolved_item)
+      callback(resolved_item or item)
+    end, bulk_id, bulk_callback)
+    return
+  end
+
   self.source:resolve(item, function(resolved_item)
     callback(resolved_item or item)
   end)

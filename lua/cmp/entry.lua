@@ -475,7 +475,7 @@ end
 
 ---Resolve completion item.
 ---@param callback fun()
-entry.resolve = function(self, callback)
+entry.resolve = function(self, callback, bulk_id, bulk_callback)
   if self.resolved_completion_item then
     return callback()
   end
@@ -493,7 +493,7 @@ entry.resolve = function(self, callback)
       for _, c in ipairs(self.resolved_callbacks) do
         c()
       end
-    end)
+    end, bulk_id, bulk_callback)
   end
 end
 

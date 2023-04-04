@@ -29,6 +29,7 @@ core.new = function()
   self.context = context.new()
   self.event = event.new()
   self.view = view.new()
+  self.bulk_id = 0
   self.view.event:on('keymap', function(...)
     self:on_keymap(...)
   end)
@@ -284,15 +285,41 @@ core.complete = function(self, ctx)
             self:filter()
           end
         end
+        -- pre resolve when completions are fetched
+        self:pre_resolve_lsp_items(s, ctx)
       end
     end)(s)
+
     s:complete(ctx, callback)
+    -- pre resolve when completions are not fetched but filtered because of entries limit
+    self:pre_resolve_lsp_items(s, ctx)
   end
 
   if not self.view:get_active_entry() then
     self.filter.timeout = self.view:visible() and config.get().performance.throttle or 1
     self:filter()
   end
+end
+
+core.pre_resolve_lsp_items = function(self, s, ctx)
+  if s.name ~= 'nvim_lsp' then
+    return
+  end
+
+  local entries = s:get_entries(ctx)
+
+  if #entries > 20 then
+    return
+  end
+
+  for _, e in ipairs(entries) do
+    e:resolve(function() end, self.bulk_id, function()
+      self:filter()
+      -- vim.notify('Filtered ' .. #entries)
+    end)
+  end
+
+  self.bulk_id = self.bulk_id + 1
 end
 
 ---Update completion menu
